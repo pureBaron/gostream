@@ -2,7 +2,7 @@
 ##### processing go slices in a funcional way
 
 ## sample code:
-```go
+```golang
 slc := []int{1, 19, 12, 6, 4, 29}
 gostream.New(slc, gostream.SequentialType)
     .Filter(func(i int)bool {return i%2 == 0})
