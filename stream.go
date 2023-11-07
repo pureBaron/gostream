@@ -106,7 +106,9 @@ func (c *concurrentStream[T]) Filter(p Predicate[T]) Stream[T] {
 
 	c.ForEach(func(t T) {
 		if p(t) {
+			c.Lock()
 			res = append(res, t)
+			c.Unlock()
 		}
 	})
 
@@ -119,6 +121,8 @@ func (c *concurrentStream[T]) Map(m Map[T]) Stream[T] {
 	res := []T{}
 
 	c.ForEach(func(t T) {
+		c.Lock()
+		defer c.Unlock()
 		res = append(res, m(t))
 	})
 
