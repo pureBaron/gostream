@@ -21,7 +21,7 @@ type Factory[T any] interface {
 type sequentialStreamFactory[T any] struct{}
 
 func (s sequentialStreamFactory[T]) New(slc []T) Stream[T] {
-	return sequentialStream[T]{
+	return &sequentialStream[T]{
 		slc: slc,
 	}
 }
@@ -29,7 +29,7 @@ func (s sequentialStreamFactory[T]) New(slc []T) Stream[T] {
 type concurrentStreamFactory[T any] struct{}
 
 func (c concurrentStreamFactory[T]) New(slc []T) Stream[T] {
-	return concurrentStream[T]{
+	return &concurrentStream[T]{
 		slc: slc,
 	}
 }

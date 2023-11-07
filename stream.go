@@ -97,10 +97,11 @@ func (s sequentialStream[T]) AllMatch(p Predicate[T]) bool {
 }
 
 type concurrentStream[T any] struct {
+	sync.Mutex
 	slc []T
 }
 
-func (c concurrentStream[T]) Filter(p Predicate[T]) Stream[T] {
+func (c *concurrentStream[T]) Filter(p Predicate[T]) Stream[T] {
 	res := []T{}
 
 	c.ForEach(func(t T) {
@@ -109,24 +110,24 @@ func (c concurrentStream[T]) Filter(p Predicate[T]) Stream[T] {
 		}
 	})
 
-	return concurrentStream[T]{
+	return &concurrentStream[T]{
 		slc: res,
 	}
 }
 
-func (c concurrentStream[T]) Map(m Map[T]) Stream[T] {
+func (c *concurrentStream[T]) Map(m Map[T]) Stream[T] {
 	res := []T{}
 
 	c.ForEach(func(t T) {
 		res = append(res, m(t))
 	})
 
-	return concurrentStream[T]{
+	return &concurrentStream[T]{
 		slc: res,
 	}
 }
 
-func (c concurrentStream[T]) ForEach(cons Consumer[T]) {
+func (c *concurrentStream[T]) ForEach(cons Consumer[T]) {
 	var wg sync.WaitGroup
 	for _, val := range c.slc {
 		wg.Add(1)
@@ -140,25 +141,27 @@ func (c concurrentStream[T]) ForEach(cons Consumer[T]) {
 	wg.Wait()
 }
 
-func (c concurrentStream[T]) Reduce(bo BinaryOperator[T]) T {
+func (c *concurrentStream[T]) Reduce(bo BinaryOperator[T]) T {
 	var res T
 
 	c.ForEach(func(t T) {
+		c.Lock()
+		defer c.Unlock()
 		res = bo(res, t)
 	})
 
 	return res
 }
 
-func (c concurrentStream[T]) ToSlice() []T {
+func (c *concurrentStream[T]) ToSlice() []T {
 	return c.slc
 }
 
-func (c concurrentStream[T]) Count() int {
+func (c *concurrentStream[T]) Count() int {
 	return len(c.slc)
 }
 
-func (c concurrentStream[T]) AnyMatch(p Predicate[T]) bool {
+func (c *concurrentStream[T]) AnyMatch(p Predicate[T]) bool {
 	res := false
 
 	c.ForEach(func(t T) {
@@ -170,7 +173,7 @@ func (c concurrentStream[T]) AnyMatch(p Predicate[T]) bool {
 	return res
 }
 
-func (c concurrentStream[T]) AllMatch(p Predicate[T]) bool {
+func (c *concurrentStream[T]) AllMatch(p Predicate[T]) bool {
 	res := true
 
 	c.ForEach(func(t T) {
